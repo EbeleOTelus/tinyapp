@@ -61,6 +61,18 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
+app.post("/url/:id/delete",(req, res) => {
+
+  const ID = req.params.id
+  
+  delete urlDatabase[ID];
+  
+  res.redirect('/urls')
+  
+  })
+  
+
+
 // app.get("/set", (req, res) => {
 //   const a = 1;
 //   res.send(`a = ${a}`);
