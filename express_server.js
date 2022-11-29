@@ -9,6 +9,7 @@ app.set("view engine", "ejs");
 const urlDatabase = {
   "b2xVn2": "http://www.lighthouselabs.ca",
   "9sm5xK": "http://www.google.com"
+
 };
 
 app.use(express.urlencoded({ extended: true }));
@@ -41,8 +42,23 @@ app.get("/urls/:id", (req, res) => {
 });
 
 app.post("/urls", (req, res) => {
-  console.log(req.body); // Log the POST request body to the console
-  res.send("Ok"); // Respond with 'Ok' (we will replace this)
+  const longURL = req.body.longURL;
+  const ID = generateRandomString()
+  urlDatabase[ID] = longURL
+  // Log the POST request body to the console
+  res.redirect(`/urls/${ID}`); // Respond with 'Ok' (we will replace this)
+});
+
+app.get("/u/:id", (req, res) => {
+  // const longURL
+  const shortURL = req.params.id;
+  const longURL = urlDatabase[shortURL];
+  // we need the object and the key
+  if (longURL){
+  res.redirect(longURL);
+  } else {
+    res.render("This does not exist");
+  }
 });
 
 // app.get("/set", (req, res) => {
@@ -59,7 +75,10 @@ app.listen(PORT, () => {
 });
 
 
-function generateRandomString() {}
+function generateRandomString() {
+  return (Math.random() + 1).toString(36).slice(2, 8);
+  
+}
 
 
 
