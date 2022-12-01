@@ -48,32 +48,53 @@ app.get("/urls", (req, res) => {
   const id = req.cookies["user_id"];
   const user = users[id];
   const templateVars = { urls: urlDatabase, user };
+  if (!id) {
+    res.status(401).send("You need to register or login");
+  }
   res.render("urls_index", templateVars);
 });
 
 app.get("/urls/new", (req, res) => {
-  const templateVars = { user: undefined };
-  res.render("urls_new", templateVars);
+  const email = req.body.email;
+  const password = req.body.password;
+  if (!email && !password) {
+    res.redirect("/login");
+  }
+  else {
+    const templateVars = { user: undefined };
+    res.render("urls_new", templateVars);
+  }
 });
 
 app.get("/urls/:id", (req, res) => {
   const id = req.cookies["user_id"];
   const user = users[id];
   const shortURL = req.params.id;
-  const templateVars = {
-    id: shortURL,
-    longURL: urlDatabase[shortURL],
-    user
-  };
-  res.render("urls_show", templateVars);
+  if (!urlDatabase[shortURL]) {
+    res.status(400).send("There is no url with provided id in our database");
+  } else {
+    const templateVars = {
+      id: shortURL,
+      longURL: urlDatabase[shortURL],
+      user
+    };
+    res.render("urls_show", templateVars);
+  }
 });
 
 app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;
-  const ID = generateRandomString();
-  urlDatabase[ID] = longURL;
-  // Log the POST request body to the console
-  res.redirect(`/urls/${ID}`); // Respond with 'Ok' (we will replace this)
+  const email = req.body.email;
+  const password = req.body.password;
+  if (email && password) {
+
+    const longURL = req.body.longURL;
+    const ID = generateRandomString();
+    urlDatabase[ID] = longURL;
+    // Log the POST request body to the console
+    res.redirect(`/urls/${ID}`); // Respond with 'Ok' (we will replace this)
+  } else {
+    res.status(401).send("Login with a valid email to shorten urls");
+  }
 });
 
 app.get("/u/:id", (req, res) => {
@@ -91,22 +112,29 @@ app.get("/u/:id", (req, res) => {
 app.get("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-const templateVars ={
-  user: undefined
-}
-  res.render("urls_registration", templateVars);
-
+  if (email && password) {
+    res.redirect("/urls");
+  } else {
+    const templateVars = {
+      user: undefined
+    };
+    res.render("urls_registration", templateVars);
+  }
 });
 
 app.get("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
-  const templateVars ={
-    user: undefined
+  if (email && password) {
+    res.redirect("/urls");
+  } else {
+
+    const templateVars = {
+      user: undefined
+    };
+
+    res.render("urls_login", templateVars);
   }
-
-  res.render("urls_login", templateVars);
-
 });
 
 app.post("/url/:id/delete", (req, res) => {
@@ -202,9 +230,26 @@ function generateRandomString() {
 }
 
 
+function urlsForUser(id) {
+  // let id = req.cookies["user_id"];
+  for (let key in urlDatabase) {
+    if (key[userID] === id) {
+      return urlDatabase[key].longUrl;
+    }
+  }
 
+}
 
-
+// const urlDatabase = {
+//   b6UTxQ: {
+//     longURL: "https://www.tsn.ca",
+//     userID: "aJ48lW",
+//   },
+//   i3BoGr: {
+//     longURL: "https://www.google.ca",
+//     userID: "aJ48lW",
+//   },
+// };
 
 
 
