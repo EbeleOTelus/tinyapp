@@ -67,6 +67,7 @@ app.get("/urls", (req, res) => {
   const user = users[id];
   const urlObj = urlsForUser(id);
   const templateVars = { user, urls: urlObj };
+  console.log({user, urlObj, urlDatabase})
 
   res.render("urls_index", templateVars);
 });
@@ -90,18 +91,19 @@ app.get("/urls/:id", (req, res) => {
   const user = users[id];
   const shortURL = req.params.id;
   const userUrls = urlsForUser(id, urlDatabase);
-  if (!urlDatabase[shortURL]) {
-    return res.status(400).send("There is no url with provided id in our database");
-  } if (!id || userUrls[shortURL]) {
-    res.status(400).send("You are not authorized to access this page");
+  if (!id) {
+    return res.status(400).send("You are not authorized to access this page");
   }
+  if (urlDatabase[shortURL] && urlDatabase[shortURL].userID !== id) {
+    return res.status(400).send("This URL was not created by you");
+  } 
 
   const templateVars = {
     id: shortURL,
     longURL: urlDatabase[shortURL].longURL,
     user
   };
-  res.render("urls_show", templateVars);
+  return res.render("urls_show", templateVars);
 
 });
 
@@ -109,7 +111,7 @@ app.post("/urls", (req, res) => {
   // const email = req.body.email;
   // // const user_id = req.cookies['user_id'];
   // const password = req.body.password;
-  
+
   const longURL = req.body.longURL;
   const userID = req.cookies["user_id"];
   if (longURL) {
@@ -117,11 +119,11 @@ app.post("/urls", (req, res) => {
     urlDatabase[ID] = {
       longURL: longURL,
       userID: userID
-    }
+    };
     // Log the POST request body to the console
-    res.redirect(`/urls/${ID}`); // Respond with 'Ok' (we will replace this)
+   return res.redirect(`/urls/${ID}`); // Respond with 'Ok' (we will replace this)
   } else {
-    res.status(401).send("Login with a valid email to shorten urls");
+   return res.status(401).send("Login with a valid email to shorten urls");
   }
 });
 
@@ -170,10 +172,10 @@ app.post("/urls/:id/delete", (req, res) => {
   const userId = req.cookies["user_id"];
   const ID = req.params.id;
   if (userId && userId === urlDatabase[shortURL].userID) {
-  delete urlDatabase[ID];
+    delete urlDatabase[ID];
 
-  res.redirect('/urls');
-  }else {
+    res.redirect('/urls');
+  } else {
     res.status(401).send("You are not authorized");
   }
 
@@ -182,13 +184,13 @@ app.post("/urls/:id/delete", (req, res) => {
 app.post("/urls/:id", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.id;
-  urlDatabase[shortURL].longURL = longURL;
   const id = req.cookies["user_id"];
-  if (id && id === urlDatabase[shortURL].userID) {
-    res.redirect("/urls");
-  } else {
-    res.status(401).send("You are not authorised");
-  }
+  if (!id) {
+    return res.status(401).send("You are not authorised");
+  } 
+  urlDatabase[shortURL]= {longURL, userID: id};
+   return res.redirect("/urls");
+  
 });
 
 
@@ -198,7 +200,8 @@ app.post("/login", (req, res) => {
 
   for (const id in users) {
     const user = users[id];
-    if (user.email === email && user.password === password) {
+    // console.log({user, email, password})
+    if (user.email === email && bcrypt.compareSync(password, user.password)) {
       res.cookie("user_id", id);
       return res.redirect("/urls");
     }
@@ -216,9 +219,9 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const id = generateRandomString();
   const email = req.body.email;
-  const password = req.body.password;
+  const password = bcrypt.hashSync(req.body.password, 10);
+  // console.log(password);
 
-  
   if (!email || !password) {
     return res.status(400).send("Please provide a valid email and password");
   }
@@ -236,7 +239,8 @@ app.post("/register", (req, res) => {
     password,
   };
 
-  // console.log(users);
+  let hashedPass = bcrypt.compareSync(req.body.password, password);
+  // console.log({id, email, password, hashedPass});
   res.cookie("user_id", id);
   res.redirect("/urls");
 
@@ -269,13 +273,13 @@ function generateRandomString() {
 function urlsForUser(id) {
   const urlObj = {};
   for (let key in urlDatabase) {
-    if (key.userID === id) {
-      let NewObj = {
-        longURL: urlDatabase[key].longURL,
-        userID: urlDatabase[key].userID
+    if (urlDatabase[key].userID === id) {
+      // let NewObj = {
+      //   longURL: urlDatabase[key].longURL,
+      //   userID: urlDatabase[key].userID
 
-      };
-      urlObj[key] = NewObj;
+
+      urlObj[key] = urlDatabase[key];
 
     }
   }
