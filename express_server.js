@@ -209,7 +209,7 @@ app.post("/login", (req, res) => {
   //   const user = users[id];
   // console.log({user, email, password})
   if (user && bcrypt.compareSync(password, user.password)) {
-    console.log(user)
+    console.log(user);
     req.session.user_id = user.id;  //res.cookie("user_id", id);
     return res.redirect("/urls");
 
