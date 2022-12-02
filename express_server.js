@@ -178,12 +178,12 @@ app.get("/login", (req, res) => {
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;  //req.cookies["user_id"];
   const ID = req.params.id;
-  if (userId && userId === urlDatabase[shortURL].userID) {
+  if (userId && userId !== urlDatabase[ID].user_id) {
     delete urlDatabase[ID];
 
-    res.redirect('/urls');
+    return res.redirect('/urls');
   } else {
-    res.status(401).send("You are not authorized");
+    return res.status(401).send("You are not authorized");
   }
 
 });
