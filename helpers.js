@@ -9,12 +9,12 @@ const getUserByEmail = function(email, database) {
 };
 
 //Function that generates random strings
-function generateRandomString() {
+const generateRandomString = function() {
   return (Math.random() + 1).toString(36).slice(2, 8);
-}
+};
 
 //This generates matching userID to the urldatabase id
-function urlsForUser(id, urlDatabase) {
+const urlsForUser = function(id, urlDatabase) {
   const urlObj = {};
   for (let key in urlDatabase) {
     if (urlDatabase[key].userID === id) {
@@ -22,6 +22,6 @@ function urlsForUser(id, urlDatabase) {
     }
   }
   return urlObj;
-}
+};
 
 module.exports = { getUserByEmail, generateRandomString, urlsForUser };
