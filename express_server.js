@@ -47,41 +47,36 @@ const users = {
 
 
 /*  ROUTES  */
-
+// Rendering home page
 app.get("/", (req, res) => {
   const user_id = req.session['user_id'];
 
   if (!user_id) {
     return res.redirect('/login');
   }
-
   res.redirect('/urls');
 });
+
 
 app.get("/urls.json", (req, res) => {
   res.json(urlDatabase);
 });
 
-app.get("/hello", (req, res) => {
-  res.send("<html><body>Hello <b>World</b></body></html>\n");
-});
 
-
+// URLS Page: GET route
 app.get("/urls", (req, res) => {
-
   const id = req.session.user_id;
+
   if (!id) {
     return res.status(401).send("You need to register or login");
   }
   const user = users[id];
   const urlObj = urlsForUser(id, urlDatabase);
   const templateVars = { user, urls: urlObj };
-
-
   res.render("urls_index", templateVars);
 });
 
-
+//Urls/new: GET route
 app.get("/urls/new", (req, res) => {
   const user_id = req.session.user_id;
 
@@ -89,12 +84,12 @@ app.get("/urls/new", (req, res) => {
     return res.redirect("/login");
   }
   const user = users[user_id];
-
   const templateVars = { user };
   res.render("urls_new", templateVars);
 
 });
 
+//Urls/ID: Get route
 app.get("/urls/:id", (req, res) => {
   const id = req.session.user_id;
   const user = users[id];
@@ -113,27 +108,10 @@ app.get("/urls/:id", (req, res) => {
     user
   };
   return res.render("urls_show", templateVars);
-
 });
 
-app.post("/urls", (req, res) => {
-  const longURL = req.body.longURL;
-  const userID = req.session.user_id;
-  if (longURL) {
-    const ID = generateRandomString();
-    urlDatabase[ID] = {
-      longURL: longURL,
-      userID: userID
-    };
-
-    return res.redirect(`/urls/${ID}`);
-  } else {
-    return res.status(401).send("Login with a valid email to shorten urls");
-  }
-});
 
 app.get("/u/:id", (req, res) => {
-
   const shortURL = req.params.id;
   const longURL = urlDatabase[shortURL].longURL;
   if (longURL) {
@@ -143,9 +121,10 @@ app.get("/u/:id", (req, res) => {
   }
 });
 
+//Register: GET Route
 app.get("/register", (req, res) => {
-
   const id = req.session.user_id;
+
   if (id) {
     res.redirect("/urls");
   } else {
@@ -156,6 +135,7 @@ app.get("/register", (req, res) => {
   }
 });
 
+//Login: GET Route
 app.get("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
@@ -165,24 +145,41 @@ app.get("/login", (req, res) => {
     const templateVars = {
       user: undefined
     };
-
     res.render("urls_login", templateVars);
   }
 });
 
+
+
+//Endpoint URLS: POST
+app.post("/urls", (req, res) => {
+  const longURL = req.body.longURL;
+  const userID = req.session.user_id;
+  if (longURL) {
+    const ID = generateRandomString();
+    urlDatabase[ID] = {
+      longURL: longURL,
+      userID: userID
+    };
+    return res.redirect(`/urls/${ID}`);
+  } else {
+    return res.status(401).send("Login with a valid email to shorten urls");
+  }
+});
+
+//delete U: Post
 app.post("/urls/:id/delete", (req, res) => {
   const userId = req.session.user_id;
   const ID = req.params.id;
   if (userId && userId !== urlDatabase[ID].user_id) {
     delete urlDatabase[ID];
-
     return res.redirect('/urls');
   } else {
     return res.status(401).send("You are not authorized");
   }
-
 });
 
+//URLS/id:POST
 app.post("/urls/:id", (req, res) => {
   const longURL = req.body.longURL;
   const shortURL = req.params.id;
@@ -192,40 +189,36 @@ app.post("/urls/:id", (req, res) => {
   }
   urlDatabase[shortURL] = { longURL, userID: id };
   return res.redirect("/urls");
-
 });
 
-
+//Login:POST
 app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email, users);
 
   if (user && bcrypt.compareSync(password, user.password)) {
-    console.log(user);
     req.session.user_id = user.id;
     return res.redirect("/urls");
-
   }
   return res.status(403).send("Please provide a valid email and/or password");
-
 });
 
+//Logout endpoint
 app.post("/logout", (req, res) => {
   res.clearCookie('session');
   res.clearCookie('session.sig');
   res.redirect("/login");
 });
 
-
+//Register endpoint: POST
 app.post("/register", (req, res) => {
-
   const email = req.body.email;
-  const password = bcrypt.hashSync(req.body.password, 10);
+  const password = req.body.password;
   if (!email && !password) {
     return res.status(400).send("Please provide a valid email and password");
   }
-  if (getUserByEmail(req.body.email, users)) {
+  if (!getUserByEmail(req.body.email, users) && !password) {
     return res.status(400).send("Email already exists");
   }
   const id = generateRandomString();
