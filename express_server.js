@@ -205,16 +205,16 @@ app.post("/login", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
   const user = getUserByEmail(email, users);
-
+  const userPassword = user ? user.password : null;
   if (!email || !password) {
     return res.status(400).send(`<h1>You have to provide a valid email and password to login!<h1> <a href ="/login">Back to Login</a>`);
   }
 
-  if (user && bcrypt.compareSync(password, user.password)) {
-    req.session.user_id = user.id;
-    return res.redirect("/urls");
+  if (!bcrypt.compareSync(password, userPassword)) {
+    return res.status(403).send(`<h1>You have to provide a valid email and password to login!<h1> <a href ="/login">Back to Login</a>`);
   }
-  return res.status(403).send(`<h1>You have to provide a valid email and password to login!<h1> <a href ="/login">Back to Login</a>`);
+  req.session.user_id = user.id;
+  return res.redirect("/urls");
 });
 
 //Logout endpoint
@@ -228,6 +228,7 @@ app.post("/logout", (req, res) => {
 app.post("/register", (req, res) => {
   const email = req.body.email;
   const password = req.body.password;
+  const hashedPassword = bcrypt.hashSync(password, 10);
   if (!email || !password) {
     return res.status(400).send(`<h1>Please provide a valid email and password!<h1> <a href ="/register">Back to Register</a>`);
   }
@@ -238,7 +239,7 @@ app.post("/register", (req, res) => {
   users[id] = {
     id,
     email,
-    password,
+    password: hashedPassword
   };
   req.session.user_id = id;
   res.redirect("/urls");
