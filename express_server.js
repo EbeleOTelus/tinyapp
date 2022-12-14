@@ -209,9 +209,12 @@ app.post("/login", (req, res) => {
   if (!email || !password) {
     return res.status(400).send(`<h1>You have to provide a valid email and password to login!<h1> <a href ="/login">Back to Login</a>`);
   }
+  if(!user){
+    return res.status(401).send(`<h1>This email does not exist!<h1> <a href ="/login">Back to Login</a>`)
+  }
 
   if (!bcrypt.compareSync(password, userPassword)) {
-    return res.status(403).send(`<h1>You have to provide a valid email and password to login!<h1> <a href ="/login">Back to Login</a>`);
+    return res.status(403).send(`<h1>Invalid password, please provide the correct password!<h1> <a href ="/login">Back to Login</a>`);
   }
   req.session.user_id = user.id;
   return res.redirect("/urls");
